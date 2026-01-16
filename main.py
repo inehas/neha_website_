@@ -29,7 +29,7 @@ def get_llm_explanation(customer_data, prediction_prob):
 
 # 3. UI - Create the "Ingredients" (Inputs)
 st.title("🏦 Bank Churn Predictor")
-salary = st.text_input("Estimated Salary")
+estimated_salary = st.text_input("Estimated Salary")
 
 credit_score = st.number_input("Credit Score", 300, 850, 600)
 age = st.number_input("Age", 18, 100, 40)
@@ -41,41 +41,40 @@ tenure = st.slider("Tenure", 0, 10, 5)
 has_cr_card = st.checkbox("Has Credit Card")
 is_active = st.checkbox("Is Active Member")
 if st.button("Predict"):
-    # 1. Manually Encode Categories (Matches your LabelEncoder)
+    # 1. Map Geography
     geo_map = {"France": 0, "Germany": 1, "Spain": 2}
-    gender_map = {"Female": 0, "Male": 1}
 
-    # 2. Create the input data dictionary
-    # Every key here MUST be present in the column_order list below
+    # 2. Create the dictionary with EXPLICIT type conversion
+    # We use float() and int() to satisfy XGBoost's requirements
     user_input_dict = {
-        'CreditScore': credit_score,
+        'CreditScore': int(credit_score),
         'Geography': geo_map[geography],
-       'Gender': 0,  # Added this!
-        'Age': age,
-        'Tenure': tenure,
-        'Balance': balance,
-        'NumOfProducts': num_products,
+        'Gender': 0, # Hardcoded as we discussed
+        'Age': int(age),
+        'Tenure': int(tenure),
+        'Balance': float(balance),
+        'NumOfProducts': int(num_products),
         'HasCrCard': int(has_cr_card),
         'IsActiveMember': int(is_active),
-        'EstimatedSalary': salary
+        'EstimatedSalary': float(estimated_salary) # Forced to float!
     }
 
     # 3. Convert to DataFrame
     input_df = pd.DataFrame([user_input_dict])
     
-    # 4. Correct Column Order
-    # IMPORTANT: These names must match the keys in user_input_dict above exactly.
+    # 4. Ensure Column Order
     column_order = [
         'CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 
         'Balance', 'NumOfProducts', 'HasCrCard', 
         'IsActiveMember', 'EstimatedSalary'
     ]
-    
-    # This is where the KeyError was happening!
     input_df = input_df[column_order]
 
     # 5. Predict
     try:
+        # We also ensure the DataFrame itself is float32 to be extra safe
+        input_df = input_df.astype(float) 
+        
         prob = model.predict_proba(input_df)[0][1]
         
         # 6. AI Explanation
