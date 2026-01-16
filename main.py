@@ -50,7 +50,7 @@ if st.button("Predict"):
     user_input_dict = {
         'CreditScore': credit_score,
         'Geography': geo_map[geography],
-        
+       'Gender': 0,  # Added this!
         'Age': age,
         'Tenure': tenure,
         'Balance': balance,
