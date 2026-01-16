@@ -41,33 +41,37 @@ tenure = st.slider("Tenure", 0, 10, 5)
 has_cr_card = st.checkbox("Has Credit Card")
 is_active = st.checkbox("Is Active Member")
 if st.button("Predict"):
-    # 1. Manually Encode Categories (Matches LabelEncoder behavior)
+    # 1. Manually Encode Categories (Matches your LabelEncoder)
     geo_map = {"France": 0, "Germany": 1, "Spain": 2}
     gender_map = {"Female": 0, "Male": 1}
 
     # 2. Create the input data dictionary
+    # Every key here MUST be present in the column_order list below
     user_input_dict = {
         'CreditScore': credit_score,
-        'Geography': geo_map[geography],  # Converts "France" -> 0
-          # Ensure you have a gender selectbox!
+        'Geography': geo_map[geography],
+        
         'Age': age,
         'Tenure': tenure,
         'Balance': balance,
         'NumOfProducts': num_products,
         'HasCrCard': int(has_cr_card),
         'IsActiveMember': int(is_active),
-        'EstimatedSalary':salary
+        'EstimatedSalary': salary
     }
 
     # 3. Convert to DataFrame
     input_df = pd.DataFrame([user_input_dict])
     
-    # 4. Ensure Column Order matches train.py EXACTLY
-    # Check your notebook: the order here MUST be the same as your X_train
-    column_order = ['CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 
-                    'Balance', 'NumOfProducts', 'HasCrCard', 
-                    'IsActiveMember', 'EstimatedSalary']
+    # 4. Correct Column Order
+    # IMPORTANT: These names must match the keys in user_input_dict above exactly.
+    column_order = [
+        'CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 
+        'Balance', 'NumOfProducts', 'HasCrCard', 
+        'IsActiveMember', 'EstimatedSalary'
+    ]
     
+    # This is where the KeyError was happening!
     input_df = input_df[column_order]
 
     # 5. Predict
@@ -82,4 +86,4 @@ if st.button("Predict"):
         st.info(explanation)
         
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Prediction Error: {e}")
