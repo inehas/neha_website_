@@ -44,40 +44,45 @@ if st.button("Predict"):
     # 1. Map Geography
     geo_map = {"France": 0, "Germany": 1, "Spain": 2}
 
-    # 2. Create the dictionary with EXPLICIT type conversion
-    # We use float() and int() to satisfy XGBoost's requirements
+    # 2. Create the dictionary and calculate the new feature
     user_input_dict = {
         'CreditScore': int(credit_score),
         'Geography': geo_map[geography],
-        'Gender': 0, # Hardcoded as we discussed
+        'Gender': 0, 
         'Age': int(age),
         'Tenure': int(tenure),
         'Balance': float(balance),
         'NumOfProducts': int(num_products),
         'HasCrCard': int(has_cr_card),
         'IsActiveMember': int(is_active),
-        'EstimatedSalary': float(estimated_salary) # Forced to float!
+        'EstimatedSalary': float(estimated_salary)
     }
+    
+    # 3. CALCULATE THE MISSING FEATURE (This fixes the error!)
+    # Avoid division by zero if salary is 0
+    if user_input_dict['EstimatedSalary'] > 0:
+        user_input_dict['BalanceSalaryRatio'] = user_input_dict['Balance'] / user_input_dict['EstimatedSalary']
+    else:
+        user_input_dict['BalanceSalaryRatio'] = 0
 
-    # 3. Convert to DataFrame
+    # 4. Convert to DataFrame
     input_df = pd.DataFrame([user_input_dict])
     
-    # 4. Ensure Column Order
+    # 5. Updated Column Order (Now with 11 columns)
+    # The order must match the EXACT order from your error message
     column_order = [
         'CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 
         'Balance', 'NumOfProducts', 'HasCrCard', 
-        'IsActiveMember', 'EstimatedSalary'
+        'IsActiveMember', 'EstimatedSalary', 'BalanceSalaryRatio'
     ]
     input_df = input_df[column_order]
 
-    # 5. Predict
+    # 6. Predict
     try:
-        # We also ensure the DataFrame itself is float32 to be extra safe
         input_df = input_df.astype(float) 
-        
         prob = model.predict_proba(input_df)[0][1]
         
-        # 6. AI Explanation
+        # 7. AI Explanation
         explanation = get_llm_explanation(user_input_dict, prob)
         
         st.write(f"### Churn Probability: {prob:.1%}")
