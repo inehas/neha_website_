@@ -40,19 +40,46 @@ geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
 tenure = st.slider("Tenure", 0, 10, 5)
 has_cr_card = st.checkbox("Has Credit Card")
 is_active = st.checkbox("Is Active Member")
-
 if st.button("Predict"):
-    user_input_dict = {
-        "Age": age,
-        "Balance": balance,
-        "CreditScore": credit_score,
-        "IsActiveMember": is_active,
-        "NumOfProducts": num_products,
-        "EstimatedSalary": salary
-    }
-    input_df = pd.DataFrame([user_input_dict])
-    prob = model.predict_proba(input_df)[0][1]
-    explanation = get_llm_explanation(user_input_dict, prob)
+    # 1. Manually Encode Categories (Matches LabelEncoder behavior)
+    geo_map = {"France": 0, "Germany": 1, "Spain": 2}
+    gender_map = {"Female": 0, "Male": 1}
 
-    st.success(f"Churn Probability: {prob:.2f}")
-    st.write(explanation)
+    # 2. Create the input data dictionary
+    user_input_dict = {
+        'CreditScore': credit_score,
+        'Geography': geo_map[geography],  # Converts "France" -> 0
+          # Ensure you have a gender selectbox!
+        'Age': age,
+        'Tenure': tenure,
+        'Balance': balance,
+        'NumOfProducts': num_products,
+        'HasCrCard': int(has_cr_card),
+        'IsActiveMember': int(is_active),
+        'EstimatedSalary':salary
+    }
+
+    # 3. Convert to DataFrame
+    input_df = pd.DataFrame([user_input_dict])
+    
+    # 4. Ensure Column Order matches train.py EXACTLY
+    # Check your notebook: the order here MUST be the same as your X_train
+    column_order = ['CreditScore', 'Geography', 'Gender', 'Age', 'Tenure', 
+                    'Balance', 'NumOfProducts', 'HasCrCard', 
+                    'IsActiveMember', 'EstimatedSalary']
+    
+    input_df = input_df[column_order]
+
+    # 5. Predict
+    try:
+        prob = model.predict_proba(input_df)[0][1]
+        
+        # 6. AI Explanation
+        explanation = get_llm_explanation(user_input_dict, prob)
+        
+        st.write(f"### Churn Probability: {prob:.1%}")
+        st.subheader("🤖 AI Insights")
+        st.info(explanation)
+        
+    except Exception as e:
+        st.error(f"Error: {e}")
